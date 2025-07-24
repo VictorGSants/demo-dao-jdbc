@@ -8,8 +8,8 @@ import db.DB;
 import db.DbExeptions;
 
 import java.sql.*;
+import java.sql.Date;
 import java.util.*;
-import java.util.Date;
 
 public class SellerDaoJDBC implements SellerDao {
 
@@ -28,7 +28,42 @@ public class SellerDaoJDBC implements SellerDao {
 
     @Override
     public void insert(Seller obj) {
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+        Seller seller = new Seller();
+        try {
+            statement = connection.prepareStatement(
+                    "INSERT INTO seller\n" +
+                            "(Name, Email, BirthDate, BaseSalary, DepartmentId)\n" +
+                            "VALUES\n" +
+                            "(?, ?, ?, ?, ?)",
+                    Statement.RETURN_GENERATED_KEYS
+            );
 
+            statement.setString(1, obj.getName());
+            statement.setString(2, obj.getEmail());
+            statement.setDate(3, new java.sql.Date(obj.getBirthday().getTime()));
+            statement.setDouble(4, obj.getBaseSalary());
+            statement.setInt(5, obj.getDepartment().getId());
+
+            int rowsAffected = statement.executeUpdate();
+
+            if (rowsAffected > 0){
+                resultSet = statement.getGeneratedKeys();
+                if (resultSet.next()){
+                    int id = resultSet.getInt(1);
+                    obj.setId(id);
+                }
+            }
+
+
+        } catch (SQLException e) {
+            throw new DbExeptions(e.getMessage());
+        }
+        finally {
+            DB.closeStatement(statement);
+            DB.closeResultset(resultSet);
+        }
     }
 
     @Override
