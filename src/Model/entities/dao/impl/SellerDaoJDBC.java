@@ -7,12 +7,9 @@ import Model.entities.dao.SellerDao;
 import db.DB;
 import db.DbExeptions;
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
+import java.util.*;
 import java.util.Date;
-import java.util.List;
 
 public class SellerDaoJDBC implements SellerDao {
 
@@ -107,6 +104,54 @@ public class SellerDaoJDBC implements SellerDao {
     @Override
     public List<Seller> findAll() {
         return null;
+    }
+
+    @Override
+    public List<Seller> findByDepartment(Department department) {
+        PreparedStatement statement = null;
+        ResultSet resultSet = null;
+
+        try {
+            statement = connection.prepareStatement(
+                    "SELECT seller.*,department.Name as DepName "+
+                    "FROM seller INNER JOIN department "+
+                    "ON seller.DepartmentId = department.Id "+
+                    "WHERE DepartmentId = ? "+
+                    "ORDER BY Name");
+
+            statement.setInt(1, department.getId());
+            resultSet = statement.executeQuery();
+
+// list e while pois tem mais de um resultado:
+
+            List<Seller> list = new ArrayList<>();
+            // cria um map vazio para depois guardar qualquer departamento que instanciar
+            Map<Integer, Department> map = new HashMap<>();
+
+
+            while (resultSet.next()){
+
+                department = map.get(resultSet.getInt("DepartmentId"));
+                // se o department que passou no DepartmentId for nulo significa que ele nao existe ainda, faz isso para nao se instanciar o mesmo departamento varias vezes
+                if (department == null) {
+                    department = instantiateDepartmant(resultSet);
+                    map.put(resultSet.getInt("DepartmentId"), department);
+                }
+                Seller obj = instantiateSeller(resultSet, department);
+                list.add(obj);
+            }
+            return list;
+
+        }
+        catch (SQLException e){
+            throw  new DbExeptions(e.getMessage());
+        }
+        finally {
+            DB.closeStatement(statement);
+            DB.closeResultset(resultSet);
+        }
+
+
     }
 
 
