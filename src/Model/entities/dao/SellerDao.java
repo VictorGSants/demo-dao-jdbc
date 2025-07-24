@@ -11,6 +11,7 @@ public interface SellerDao {
     void insert(Seller obj);
     void update(Seller obj);
     void deleteById(Integer id);
+    
     // responsavel por consultar no banco um obj com este id
     Seller findById(Integer id);
     List<Seller> findAll();
